@@ -116,6 +116,18 @@ class Dropout(Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
 
+class CustomDropout(Dropout):
+    """Dropout for denoising autoencoder."""
+    def call(self, x, mask=None):
+        if 0. < self.p < 1.:
+            noise_shape = self._get_noise_shape(x)
+
+            def dropped_inputs():
+                return K.dropout(x * self.p, self.p, noise_shape, seed=self.seed)
+            x = K.in_train_phase(dropped_inputs, lambda: x)
+        return x
+
+
 class SpatialDropout1D(Dropout):
     """Spatial 1D version of Dropout.
 
@@ -866,6 +878,23 @@ class ActivityRegularization(Layer):
         config = {'l1': self.l1,
                   'l2': self.l2}
         base_config = super(ActivityRegularization, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
+
+class Relu1L1Regularization(Layer):
+    """L1 Regularizer to push the activation of Relu-1 to two ends."""
+    def __init__(self, l1, **kwargs):
+        # assert l1
+        self.supports_masking = True
+        self.l1 = l1
+
+        super(Relu1L1Regularization, self).__init__(**kwargs)
+        self.activity_regularizer = regularizers.Relu1L1Regularizer(l1)
+        self.regularizers = [self.activity_regularizer]
+
+    def get_config(self):
+        config = {'l1': self.l1}
+        base_config = super(Relu1L1Regularization, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
 

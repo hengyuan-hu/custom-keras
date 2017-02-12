@@ -86,6 +86,21 @@ class L1L2Regularizer(Regularizer):
                 'l2': float(self.l2)}
 
 
+class Relu1L1Regularizer(Regularizer):
+    """L1 Regularizer to push the activation of Relu-1 to two ends."""
+    def __init__(self, l1):
+        assert l1
+        self.l1 = K.cast_to_floatx(l1)
+
+    def __call__(self, x):
+        regularization = K.sum(self.l1 * (0.5 - K.abs(x-0.5)))
+        return regularization
+
+    def get_config(self):
+        return {'name': self.__class__.__name__,
+                'l1': float(self.l1)}
+
+
 # Aliases.
 
 WeightRegularizer = L1L2Regularizer
@@ -114,6 +129,10 @@ def activity_l2(l=0.01):
 
 def activity_l1l2(l1=0.01, l2=0.01):
     return L1L2Regularizer(l1=l1, l2=l2)
+
+
+def relu1_l1(l1):
+    return Relu1L1Regularizer(l1=l1)
 
 
 def get(identifier, kwargs=None):
